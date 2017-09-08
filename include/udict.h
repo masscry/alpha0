@@ -1,6 +1,6 @@
 /**
  * @file udict.h
- * @author timur
+ * @author masscry
  *
  * C hash table implementation.
  *
@@ -14,7 +14,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 struct _udict_item_;
 struct _udict_;

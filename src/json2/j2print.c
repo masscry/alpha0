@@ -1,6 +1,11 @@
-//
-// Created by timur on 06.05.16.
-//
+/**
+ * @file j2print.c
+ * @author masscry
+ * @date 06.05.16
+ *
+ * JSON print routines implementation.
+ *
+ */
 
 #include <string.h>
 #include <assert.h>

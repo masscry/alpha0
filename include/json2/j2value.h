@@ -1,6 +1,6 @@
 /**
  * @file j2tree.h
- * @author timur
+ * @author masscry
  * @date 31.08.2017
  *
  * Standard C JSON Parser Tree.

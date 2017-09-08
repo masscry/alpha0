@@ -1,6 +1,6 @@
 /**
  * @file j2print.h
- * @author timur
+ * @author masscry
  * @date 06.05.16.
  */
 
