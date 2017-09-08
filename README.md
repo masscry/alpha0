@@ -1,5 +1,7 @@
 # Alpha0
 
+[![Build Status](https://travis-ci.org/masscry/alpha0.svg?branch=master)](https://travis-ci.org/masscry/alpha0)
+
 Alpha0 -- an assembly of some simple, but useful structures for C language.
 
 ## Content
