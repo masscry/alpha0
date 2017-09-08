@@ -36,4 +36,10 @@ install(EXPORT alpha0-config DESTINATION share/cmake)
 
 export(TARGETS alpha0 FILE alpha0-config.cmake)
 
+add_executable(rbuf-udict-test test/rbuf-udict-test.c)
 
+target_link_libraries(rbuf-udict-test
+    alpha0
+)
+
+add_test(NAME rbuf-udict-test COMMAND ./rbuf-udict-test)
