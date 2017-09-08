@@ -5,6 +5,19 @@ compiler:
  - gcc
  - clang
 
+env:
+  global:
+    - CTEST_EXT_COLOR_OUTPUT=TRUE
+    - CTEST_BUILD_FLAGS=-j4
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      env: CTEST_TARGET_SYSTEM=Linux-gcc CTEST_MODEL=Nightly
+    - os: linux
+      compiler: clang
+      env: CTEST_TARGET_SYSTEN=Linux-clang CTEST_MODEL=Nightly
 
 before_install:
 - sudo apt-get update -qq
@@ -17,5 +30,4 @@ script:
 - cd build
 - cmake ../
 - cmake --build ./
-
-
+- ctest -VV -S

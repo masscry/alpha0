@@ -11,6 +11,8 @@
 #ifndef __J2_DYN_STRING_HEADER__
 #define __J2_DYN_STRING_HEADER__
 
+#include <stdlib.h>
+
 #define DS_INITIAL_LEN (8)
 
 typedef struct dynstr_t {
