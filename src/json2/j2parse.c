@@ -7,8 +7,8 @@
 #include <ctype.h>
 #include <malloc.h>
 
-#include <j2parse.h>
-#include <j2dynstr.h>
+#include <json2/j2parse.h>
+#include <json2/j2dynstr.h>
 
 static int issplit(int symbol) {
     switch (symbol) {
@@ -200,7 +200,7 @@ static int extractNumber(j2ParseCallback calls, void* context, double* presult) 
     temp = dsReleaseBuffer(&result);
 
     *presult = strtod(temp, &end);
-    // here can be some check for end var.    
+    // here can be some check for end var.
     free(temp);
     return 0;
 }

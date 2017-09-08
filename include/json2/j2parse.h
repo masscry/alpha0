@@ -1,17 +1,17 @@
 /**
- * @file j2parser.h
- * @author timur
+ * @file j2parse.h
+ * @author masscry
  * @date 06.05.16
- * 
+ *
  * JSON parser routines.
- *  
+ *
  */
 
 #pragma once
 #ifndef __JSON_PARSER_HEADER__
 #define __JSON_PARSER_HEADER__
 
-#include <j2value.h>
+#include "j2value.h"
 
 typedef int (*j2GetCharFunc)(void* context);
 

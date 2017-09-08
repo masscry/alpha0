@@ -8,7 +8,7 @@
 #ifndef __JSON_PRINTER_HEADER__
 #define __JSON_PRINTER_HEADER__
 
-#include <j2value.h>
+#include <json2/j2value.h>
 
 /**
  * Write callback function type.

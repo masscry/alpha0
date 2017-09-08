@@ -8,8 +8,9 @@
  */
 
 #include <string.h>
-#include <j2value.h>
+
 #include <udict.h>
+#include <json2/j2value.h>
 
 /**
  * Inner j2 key-value struct.

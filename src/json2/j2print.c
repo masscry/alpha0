@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <j2printer.h>
+#include <json2/j2print.h>
 
 size_t PrintSpaces(write_func_t write, void* context, int indent){
     if (indent > 0) {
