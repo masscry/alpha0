@@ -43,3 +43,19 @@ target_link_libraries(rbuf-udict-test
 )
 
 add_test(NAME rbuf-udict-test COMMAND ./rbuf-udict-test)
+
+add_executable(json2-test 
+    test/json2-test.c
+    test/j2parser-test.c
+    test/j2printer-test.c
+    contrib/CuTest.c)
+
+target_include_directories(json2-test PRIVATE
+    ./contrib
+)
+
+target_link_libraries(json2-test
+    alpha0
+)
+
+add_test(NAME json2-test COMMAND ./json2-test)
