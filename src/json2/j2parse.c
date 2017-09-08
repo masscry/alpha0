@@ -1,6 +1,11 @@
-//
-// Created by timur on 06.05.16.
-//
+/**
+ * @file j2parse.c
+ * @author masscry
+ * @date 06.06.16
+ *
+ * JSON parser implementation.
+ *
+ */
 
 #include <string.h>
 #include <locale.h>
