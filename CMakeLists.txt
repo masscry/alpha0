@@ -16,6 +16,8 @@ set(ALPHA0_SOURCES
     ./contrib/mur32.c
 )
 
+add_definitions("-std=gnu99")
+
 add_library(alpha0 ${ALPHA0_SOURCES})
 
 target_include_directories(alpha0 PUBLIC
