@@ -5,29 +5,17 @@ compiler:
  - gcc
  - clang
 
-env:
-  global:
-    - CTEST_EXT_COLOR_OUTPUT=TRUE
-    - CTEST_BUILD_FLAGS=-j4
-
-matrix:
-  include:
-    - os: linux
-      compiler: gcc
-      env: CTEST_TARGET_SYSTEM=Linux-gcc CTEST_MODEL=Nightly
-    - os: linux
-      compiler: clang
-      env: CTEST_TARGET_SYSTEN=Linux-clang CTEST_MODEL=Nightly
-
 before_install:
 - sudo apt-get update -qq
 - sudo apt-get install -qq cmake
+- pip install --user cpp-coveralls
 
 install: true
 
 script:
-- mkdir build
-- cd build
-- cmake ../
+- cmake ./
 - cmake --build ./
 - ctest -VV -S
+
+after_success:
+- coveralls --gcov-options '\-lp'
