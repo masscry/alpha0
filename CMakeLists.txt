@@ -18,7 +18,7 @@ set(ALPHA0_SOURCES
 
 add_definitions("-std=gnu99 -fprofile-arcs -ftest-coverage")
 
-SET(CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs -ftest-coverage")
+SET(CMAKE_EXE_LINKER_FLAGS "--coverage")
 
 add_library(alpha0 ${ALPHA0_SOURCES})
 
