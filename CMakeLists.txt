@@ -16,9 +16,12 @@ set(ALPHA0_SOURCES
     ./contrib/mur32.c
 )
 
-add_definitions("-std=gnu99 -fprofile-arcs -ftest-coverage")
+set(CMAKE_C_STANDARD 99)
 
-SET(CMAKE_EXE_LINKER_FLAGS "--coverage")
+if(ALPHA0_CHECK_COVERAGE)
+    add_definitions("-fprofile-arcs -ftest-coverage")
+    SET(CMAKE_EXE_LINKER_FLAGS "--coverage")
+endif(ALPHA0_CHECK_COVERAGE)
 
 add_library(alpha0 ${ALPHA0_SOURCES})
 
