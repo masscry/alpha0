@@ -12,6 +12,7 @@
 #define __JSON_PARSER_HEADER__
 
 #include "j2value.h"
+#include <stdio.h>
 
 typedef int (*j2GetCharFunc)(void* context);
 
@@ -44,5 +45,13 @@ J2VAL j2ParseBuffer(const char* string, const char** endp);
  * @return parsed tree, or zero on error
  */
 J2VAL j2ParseFunc(j2ParseCallback calls, void* context);
+
+/**
+ * @brief Parse file steam
+ * 
+ * @param stream file stream
+ * @return parsed tree, or zero on error
+ */
+J2VAL j2ParseFile(FILE* stream);
 
 #endif /* __JSON_PARSER_HEADER__ */

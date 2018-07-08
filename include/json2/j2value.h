@@ -206,6 +206,9 @@ extern "C" {
    */
   int32_t j2ValueArrayAppend(J2VAL array, J2VAL item);
 
+  double joGetNumber(J2VAL obj, const char* item, double defval);
+
+  const char* joGetString(J2VAL obj, const char* item, const char* defval);
 
 #ifdef __cplusplus
 }

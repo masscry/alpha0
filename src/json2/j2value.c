@@ -112,6 +112,28 @@ void j2Cleanup(J2VAL* pval) {
   }
 }
 
+double joGetNumber(J2VAL obj, const char* item, double defval) {
+  J2VAL jitem = j2ValueObjectItem(obj, item);
+  if (jitem == 0) {
+    return defval;
+  }
+  if (j2Type(jitem) != J2_NUMBER) {
+    return defval;
+  }
+  return j2ValueNumber(jitem);
+}
+
+const char* joGetString(J2VAL obj, const char* item, const char* defval) {
+  J2VAL jitem = j2ValueObjectItem(obj, item);
+  if (jitem == 0) {
+    return defval;
+  }
+  if (j2Type(jitem) != J2_STRING) {
+    return defval;
+  }
+  return j2ValueString(jitem);
+}
+
 #include "j2value/j2special.c"
 #include "j2value/j2number.c"
 #include "j2value/j2string.c"

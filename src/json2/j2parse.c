@@ -450,3 +450,37 @@ J2VAL j2ParseBuffer(const char* string, const char** endp) {
 
     return result;
 }
+
+static int basicGetCharFunc(void* pcon) {
+  FILE* fc = (FILE*) pcon;
+  if ((!feof(fc)) && (!ferror(fc))) {
+    int result = fgetc(fc);
+    if (result == EOF) {
+      return -1;
+    }
+    return result;
+  }
+  return -1;
+}
+
+static int basicPeekCharFunc(void* pcon) {
+  FILE* fc = (FILE*) pcon;
+  if ((!feof(fc)) && (!ferror(fc))) {
+    int result = fgetc(fc);
+    if (result == EOF) {
+      return -1;
+    }
+    ungetc(result, fc);
+    return result;
+  }
+  return -1;
+}
+
+static j2ParseCallback fileParse = {
+  basicGetCharFunc, /**< Return character, iterate to next */
+  basicPeekCharFunc /**< Return character, do not iterate to next */
+};
+
+J2VAL j2ParseFile(FILE* stream) {
+    return j2ParseFunc(fileParse, stream);
+}
