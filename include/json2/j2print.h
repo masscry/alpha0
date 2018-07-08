@@ -38,4 +38,6 @@ size_t j2PrintFunc(write_func_t write, void* context, const J2VAL root, int offs
  */
 size_t j2PrintBuffer(const J2VAL root, void* buffer, size_t bufsize);
 
+size_t j2PrintFile(const J2VAL root, FILE* file);
+
 #endif // __JSON_PRINTER_HEADER__

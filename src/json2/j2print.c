@@ -153,3 +153,15 @@ size_t j2PrintBuffer(const J2VAL root, void* buffer, size_t bufsize){
     sc.buffer[result] = 0;
     return result;
 }
+
+size_t simple_write_file(void* context, const void* buffer, size_t bufsize) {
+    FILE* output = (FILE*) context;
+    if (fwrite(buffer, bufsize, 1, output) != 1) {
+        return 0;
+    }
+    return bufsize;
+}
+
+size_t j2PrintFile(const J2VAL root, FILE* file) {
+    return j2PrintFunc(simple_write_file, file, root, 0);
+}
