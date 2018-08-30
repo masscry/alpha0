@@ -13,7 +13,7 @@ before_install:
 install: true
 
 script:
-- cmake ./
+- cmake -DALPHA0_CHECK_COVERAGE=TRUE ./
 - cmake --build ./
 - ctest -VV -S
 
