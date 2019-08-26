@@ -34,7 +34,7 @@ typedef struct j2ParseCallback {
  *
  * @return parsed tree, or zero on error
  */
-J2VAL j2ParseBuffer(const char* string, const char** endp);
+J2API J2VAL j2ParseBuffer(const char* string, const char** endp);
 
 /**
  * Parse data get from callbacks to json tree.
@@ -44,7 +44,7 @@ J2VAL j2ParseBuffer(const char* string, const char** endp);
  *
  * @return parsed tree, or zero on error
  */
-J2VAL j2ParseFunc(j2ParseCallback calls, void* context);
+J2API J2VAL j2ParseFunc(j2ParseCallback calls, void* context);
 
 /**
  * @brief Parse file steam
@@ -52,6 +52,6 @@ J2VAL j2ParseFunc(j2ParseCallback calls, void* context);
  * @param stream file stream
  * @return parsed tree, or zero on error
  */
-J2VAL j2ParseFile(FILE* stream);
+J2API J2VAL j2ParseFile(FILE* stream);
 
 #endif /* __JSON_PARSER_HEADER__ */

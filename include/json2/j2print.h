@@ -25,7 +25,7 @@ typedef size_t (*write_func_t)(void* context, const void* buffer, size_t bufsize
  *
  * @return sum of numbers returned by callback function
  */
-size_t j2PrintFunc(write_func_t write, void* context, const J2VAL root, int offset);
+J2API size_t j2PrintFunc(write_func_t write, void* context, const J2VAL root, int offset);
 
 /**
  * Print json tree to buffer of defined size.
@@ -36,8 +36,8 @@ size_t j2PrintFunc(write_func_t write, void* context, const J2VAL root, int offs
  *
  * @return number of written bytes
  */
-size_t j2PrintBuffer(const J2VAL root, void* buffer, size_t bufsize);
+J2API size_t j2PrintBuffer(const J2VAL root, void* buffer, size_t bufsize);
 
-size_t j2PrintFile(const J2VAL root, FILE* file);
+J2API size_t j2PrintFile(const J2VAL root, FILE* file);
 
 #endif // __JSON_PRINTER_HEADER__

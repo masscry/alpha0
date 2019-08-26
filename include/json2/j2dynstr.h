@@ -26,14 +26,14 @@ typedef struct dynstr_t {
  * 
  * @return new dynamic string or zero on errors
  */
-dynstr_t* dsInit(); 
+J2API dynstr_t* dsInit(); 
 
 /**
  * Delete dynamic string created by dsInit.
  * 
  * @param str string to delete
  */
-void dsCleanup(dynstr_t* str);
+J2API void dsCleanup(dynstr_t* str);
 
 /**
  * Append character to string.
@@ -43,7 +43,7 @@ void dsCleanup(dynstr_t* str);
  * 
  * @return non-zero on errors
  */
-int dsAppend(dynstr_t* str, char smb);
+J2API int dsAppend(dynstr_t* str, char smb);
 
 /**
  * Return string buffer captured by dynamic string,
@@ -53,8 +53,6 @@ int dsAppend(dynstr_t* str, char smb);
  * 
  * @return captured string (may be zero)
  */
-char* dsReleaseBuffer(dynstr_t* str);
-
-
+J2API char* dsReleaseBuffer(dynstr_t* str);
 
 #endif /* __J2_DYN_STRING_HEADER__ */

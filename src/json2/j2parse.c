@@ -12,8 +12,7 @@
 #include <ctype.h>
 #include <malloc.h>
 
-#include <json2/j2parse.h>
-#include <json2/j2dynstr.h>
+#include <json2.h>
 
 static int issplit(int symbol) {
     switch (symbol) {

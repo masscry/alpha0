@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <json2/j2print.h>
+#include <json2.h>
 
 size_t PrintSpaces(write_func_t write, void* context, int indent){
     if (indent > 0) {

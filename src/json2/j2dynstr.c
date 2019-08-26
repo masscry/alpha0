@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <json2/j2dynstr.h>
+#include <json2.h>
 
 dynstr_t* dsInit() {
     dynstr_t* result = (dynstr_t*) malloc(sizeof(dynstr_t));

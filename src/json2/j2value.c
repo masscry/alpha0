@@ -10,7 +10,7 @@
 #include <string.h>
 
 #include <udict.h>
-#include <json2/j2value.h>
+#include <json2.h>
 
 /**
  * Inner j2 key-value struct.
