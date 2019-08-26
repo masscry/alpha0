@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <inttypes.h>
 
-uint32_t expects = 0;
+uintptr_t expects = 0;
 
 double GetTime(struct timespec* start){
   struct timespec now;
@@ -43,7 +44,7 @@ double GetTime(struct timespec* start){
     struct timespec start;\
     clock_gettime(CLOCK_MONOTONIC, &start);\
     (test)();\
-    printf("done %u in %f sec\n", expects, GetTime(&start));\
+    printf("done %"PRIuPTR" in %f sec\n", expects, GetTime(&start));\
     expects = 0;\
   }
 
@@ -139,10 +140,10 @@ void t001(){ // Simple inserts
 
 void t002(){ // Inserts near capacity
   UDICT ud = udInit(5);
-  for (uint32_t key = 0; key < 5; ++key){
+  for (uintptr_t key = 0; key < 5; ++key){
     udInsert(ud, key, (void*) (key + 1));
   }
-  for (uint32_t key = 0; key < 5; ++key){
+  for (uintptr_t key = 0; key < 5; ++key){
     EXPECT(udGet(ud, key) == (void*) (key + 1));
   }
 
@@ -152,10 +153,10 @@ void t002(){ // Inserts near capacity
   udCleanup(&ud);
 
   ud = udInit(5);
-  for (uint32_t key = 4; key >= 1; --key){
+  for (uintptr_t key = 4; key >= 1; --key){
     udInsert(ud, key, (void*) (key + 1));
   }
-  for (uint32_t key = 4; key >= 1; --key){
+  for (uintptr_t key = 4; key >= 1; --key){
     EXPECT(udGet(ud, key) == (void*) (key + 1));
   }
 
@@ -175,10 +176,10 @@ void t003(){ // Random inserts test
 
   UDICT ud = udInit(RTESTLEN);
 
-  uint32_t* keys = (uint32_t*)calloc(RTESTLEN, sizeof(uint32_t));
-  uint32_t* vals = (uint32_t*)calloc(RTESTLEN, sizeof(uint32_t));
+  uintptr_t* keys = (uintptr_t*)calloc(RTESTLEN, sizeof(uintptr_t));
+  uintptr_t* vals = (uintptr_t*)calloc(RTESTLEN, sizeof(uintptr_t));
 
-  for (uint32_t i = 0; i < RTESTLEN; ++i){
+  for (uintptr_t i = 0; i < RTESTLEN; ++i){
     do { // Try to generate unique keys
       keys[i] = rand();
     } while (udFind(ud, keys[i]) != 0);
@@ -187,7 +188,7 @@ void t003(){ // Random inserts test
     SEXPECT(udInsert(ud, keys[i], (void*) vals[i]) != 0);
   }
 
-  for (uint32_t i = 0; i < RTESTLEN; ++i){
+  for (uintptr_t i = 0; i < RTESTLEN; ++i){
     SEXPECT(udGet(ud, keys[i]) == (void*) vals[i])
   }
 
@@ -199,7 +200,7 @@ void t003(){ // Random inserts test
 
 void t004(){ // Rehashing test
   UDICT ud = udInit(5);
-  for (uint32_t i = 0; i < 5; ++i){
+  for (uintptr_t i = 0; i < 5; ++i){
     udInsert(ud, i, (void*) (i + 10));
   }
 
@@ -215,7 +216,7 @@ void t004(){ // Rehashing test
   EXPECT(ud == 0); // Old hash deleted
   EXPECT(ud2 != 0); // New hash created
 
-  for (uint32_t i = 0; i < 5; ++i){
+  for (uintptr_t i = 0; i < 5; ++i){
     EXPECT(udGet(ud2, i) == (void*) (i + 10));
   }
 
@@ -224,7 +225,7 @@ void t004(){ // Rehashing test
 
 void t005() { // Replacing test
   UDICT ud = udInit(5);
-  for (uint32_t i = 0; i < 5; ++i){
+  for (uintptr_t i = 0; i < 5; ++i){
     udInsert(ud, i, (void*) (i + 10));
     EXPECT(udGet(ud, i) == (void*)(i + 10));
   }
@@ -236,7 +237,7 @@ void t005() { // Replacing test
   udCleanup(&ud);
 
   ud = udInit(5);
-  for (uint32_t i = 0; i < 5; ++i){
+  for (uintptr_t i = 0; i < 5; ++i){
     udReset(ud, i, (void*) (i + 10)); // Work as unique key inserter
     EXPECT(udGet(ud, i) == (void*)(i + 10));
   }
@@ -248,7 +249,7 @@ void t005() { // Replacing test
 
 void t006(){ // Equal key iteration
   UDICT ud = udInit(5);
-  for (uint32_t i = 0; i < 5; ++i){
+  for (uintptr_t i = 0; i < 5; ++i){
     udInsert(ud, 4, (void*) i);
   }
   UDITEM first = udFind(ud, 4);
@@ -256,7 +257,7 @@ void t006(){ // Equal key iteration
   EXPECT(udValue(first) == (void*) 0);
   EXPECT(udLeft(ud, first) == 4);
 
-  for (uint32_t i = 1; i < 5; ++i){
+  for (uintptr_t i = 1; i < 5; ++i){
     first = udNext(ud, first);
     EXPECT(first != 0);
     EXPECT(udValue(first) == (void*) i);
@@ -273,7 +274,7 @@ void t007(){
   EXPECT(rbufInit(0) == 0); // Do not allocate zero-sized
 
   RBITEM it = 0;
-  int value = 0;
+  intptr_t value = 0;
 
   EXPECT(rb != 0);
 
@@ -324,7 +325,7 @@ void t007(){
 void t008(){
   RBUF rb = rbufInit(4);
   RBITEM it = 0;
-  int value[5] = {
+  intptr_t value[5] = {
     rand(),
     rand(),
     rand(),
@@ -366,7 +367,7 @@ void t009(){
 
   RBUF rb = rbufInit(5);
   RBITEM it = 0;
-  int value[5] = {
+  intptr_t value[5] = {
     rand(),
     rand(),
     rand(),
