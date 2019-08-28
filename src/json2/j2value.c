@@ -123,6 +123,17 @@ double joGetNumber(J2VAL obj, const char* item, double defval) {
   return j2ValueNumber(jitem);
 }
 
+double jaGetNumber(J2VAL arr, uint32_t index, double defval) {
+  J2VAL jitem = j2ValueArrayIndex(arr, index);
+  if (jitem == 0) {
+    return defval;
+  }
+  if (j2Type(jitem) != J2_NUMBER) {
+    return defval;
+  }
+  return j2ValueNumber(jitem);
+}
+
 const char* joGetString(J2VAL obj, const char* item, const char* defval) {
   J2VAL jitem = j2ValueObjectItem(obj, item);
   if (jitem == 0) {
@@ -133,6 +144,18 @@ const char* joGetString(J2VAL obj, const char* item, const char* defval) {
   }
   return j2ValueString(jitem);
 }
+
+const char* jaGetString(J2VAL arr, uint32_t index, const char* defval) {
+  J2VAL jitem = j2ValueArrayIndex(arr, index);
+  if (jitem == 0) {
+    return defval;
+  }
+  if (j2Type(jitem) != J2_STRING) {
+    return defval;
+  }
+  return j2ValueString(jitem);
+}
+
 
 #include "j2value/j2special.c"
 #include "j2value/j2number.c"

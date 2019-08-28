@@ -203,4 +203,8 @@ J2API double joGetNumber(J2VAL obj, const char* item, double defval);
 
 J2API const char* joGetString(J2VAL obj, const char* item, const char* defval);
 
+J2API double jaGetNumber(J2VAL arr, uint32_t index, double defval);
+
+J2API const char* jaGetString(J2VAL arr, uint32_t index, const char* defval);
+
 #endif /* __J2_TREE_HEADER__ */
