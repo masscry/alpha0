@@ -11,6 +11,7 @@
 #include <locale.h>
 #include <ctype.h>
 #include <malloc.h>
+#include <assert.h>
 
 #include <json2.h>
 
@@ -59,6 +60,192 @@ static int expectString(j2ParseCallback calls, void* context, const char* str) {
     return issplit(calls.peek(context));
 }
 
+static int utf8OctetLengthExpected(char smb) {
+    if ((smb & 0x80) == 0) {
+        // 0XXXXXXX
+        return 1;
+    }
+    if ((smb & 0xC0) == 0x80) {
+        // tail detected
+        return 0;
+    }
+    if((smb & 0xE0) == 0xC0) {
+        // 110XXXXX 10XXXXXX 10XXXXXX 10XXXXXX
+        return 2;
+    }
+    if((smb & 0xF0) == 0xE0) {
+        // 1110XXXX 10XXXXXX 10XXXXXX 10XXXXXX
+        return 3;
+    }
+    if((smb & 0xF8) == 0xF0) {
+        // 11110XXX 10XXXXXX 10XXXXXX 10XXXXXX
+        return 4;
+    }
+    // invalid character
+    assert(0);
+    return -1;
+}
+
+#define UTF8_MAX_OCTET_BUFFER (4)
+
+const uint32_t mask[UTF8_MAX_OCTET_BUFFER+1] = {
+    0x3F, // tail has 6 bits to use   10XXXXXX
+    0x7F, // 1-byte has 7 bits to use 0XXXXXXX
+    0x1F, // 2-byte has 5 bits to use 110XXXXX
+    0x0F, // 3-byte has 4 bits to use 1110XXXX
+    0x07  // 4-byte has 3 bits to use 11110XXX
+};
+
+static uint32_t utf8ExtractOctets(int octets, j2ParseCallback calls, void* context) {
+    uint32_t result = 0;
+
+    // read first octet
+    int cursor = calls.get(context);
+    if (cursor <= 0) {
+        return 0;
+    }
+    result |= cursor & mask[octets];
+
+    // read left octets
+    --octets;
+    while(octets-->0) {
+        cursor = calls.get(context);
+        result <<= 6;
+        result |= cursor & mask[0];
+    }
+    return result;
+}
+
+#ifdef __unix__
+
+#include <iconv.h>
+
+static int dsXAppend(dynstr_t* str, uint32_t smb) {
+    iconv_t code;
+    char* smbHead;
+    size_t smbLeft;
+    char result[1];
+
+    char* resultHead;
+    size_t resultLeft;
+    size_t size;
+
+    code = iconv_open("CP866", "WCHAR_T");
+    if (code == ((iconv_t) -1)) {
+        iconv_close(code);
+        return -1;
+    }
+
+    smbHead = (char*) (&smb);
+    smbLeft = 4;
+
+    resultHead = result;
+    resultLeft = 1;
+
+    size = iconv(code, &smbHead, &smbLeft, &resultHead, &resultLeft);
+    if (size == ((size_t)-1)) {
+        iconv_close(code);
+        return -1;
+    }
+
+    if (dsAppend(str, result[0]) != 0) {
+        iconv_close(code);
+        return -1;
+    }
+
+    iconv_close(code);
+    return 0;
+}
+
+#else
+#pragma message ("WARNING: Current implementation ignores UTF-8 characters in non-unix platforms, replaces with ?")
+
+static int dsXAppend(dynstr_t* str, uint32_t smb) {
+    return dsAppend(str, '?');
+}
+
+#endif
+
+static int extractEscape(j2ParseCallback calls, void* context, dynstr_t* result) {
+    char chr;
+
+    calls.get(context);        // skip '\\'
+    chr = calls.peek(context); // peek next
+
+    switch (chr) {
+        case -1:
+        case 0:
+            return -1;
+        case '\"': // Quote
+            if (dsAppend(result, '\"') != 0) {
+                return -1;
+            }
+            calls.get(context);
+            break;
+        case '\\': // Reverse
+            if (dsAppend(result, '\\') != 0) {
+                return -1;
+            }
+            calls.get(context);
+            break;
+        case '/': // Solidus
+            if (dsAppend(result, '/') != 0) {
+                return -1;
+            }
+            calls.get(context);
+            break;
+        case 'b': // Backspace
+            if (dsAppend(result, '\b') != 0) {
+                return -1;
+            }
+            calls.get(context);
+            break;
+        case 'f': // Formfeed
+            if (dsAppend(result, '\f') != 0) {
+                return -1;
+            }
+            calls.get(context);
+            break;
+        case 'n': // Newline
+            if (dsAppend(result, '\n') != 0) {
+                return -1;
+            } 
+            calls.get(context);
+            break;
+        case 'r': // carriage return
+            if (dsAppend(result, '\r') != 0) {
+                return -1;
+            }
+            calls.get(context);
+            break;
+        case 't': // tab
+            if (dsAppend(result, '\t') != 0) {
+                return -1;
+            }
+            calls.get(context);
+            break;
+        case 'u':
+        { // Unicode
+            char buffer[5] = {0};
+            char *bufptr = buffer;
+            calls.get(context);
+            for (size_t i = 0; i < 4; ++i) {
+                *bufptr = calls.peek(context);
+                if ((!isxdigit(*((unsigned char *) bufptr))) || (*bufptr == 0)) {
+                    return -1;
+                }
+                ++bufptr;
+                calls.get(context);
+            }
+            if (dsXAppend(result, strtoul(buffer, 0, 16)) != 0) {
+                return -1;
+            }
+            break;
+        }
+    }
+    return 0;
+}
+
 static int extractString(j2ParseCallback calls, void* context, char** pstr) {
     int chr = -1;
     dynstr_t result;
@@ -82,81 +269,61 @@ static int extractString(j2ParseCallback calls, void* context, char** pstr) {
         switch (chr) {
             case -1:
             case 0:
-                free(dsReleaseBuffer(&result));
-                return -1;
+                goto ON_EXTRACT_ERROR;
             case '\"': // closing quote
-                dsAppend(&result, 0);
+                if (dsAppend(&result, '\0') != 0) {
+                    goto ON_EXTRACT_ERROR;
+                }
                 *pstr = dsReleaseBuffer(&result);
                 calls.get(context);
                 return 0;
             case '\\': // Escape character
-                calls.get(context);
-                chr = calls.peek(context);
-
-                switch (chr) {
-                    case '\"': // Quote
-                        dsAppend(&result, '\"');
-                        calls.get(context);
-                        break;
-                    case '\\': // Reverse
-                        dsAppend(&result, '\\');
-                        calls.get(context);
-                        break;
-                    case '/': // Solidus
-                        dsAppend(&result, '/');
-                        calls.get(context);
-                        break;
-                    case 'b': // Backspace
-                        dsAppend(&result, '\b');
-                        calls.get(context);
-                        break;
-                    case 'f': // Formfeed
-                        dsAppend(&result, '\f');
-                        calls.get(context);
-                        break;
-                    case 'n': // Newline
-                        dsAppend(&result, '\n');
-                        calls.get(context);
-                        break;
-                    case 'r': // carriage return
-                        dsAppend(&result, '\r');
-                        calls.get(context);
-                        break;
-                    case 't': // tab
-                        dsAppend(&result, '\t');
-                        calls.get(context);
-                        break;
-                    case 'u':
-                    { // Unicode
-#pragma message ("WARNING: Current implementation ignores \\uXXXX")
-                        char buffer[5] = {0};
-                        char *bufptr = buffer;
-                        calls.get(context);
-                        for (size_t i = 0; i < 4; ++i) {
-                            *bufptr = calls.peek(context);
-                            if ((!isxdigit(*((unsigned char *) bufptr))) || (*bufptr == 0)) {
-                                return -1;
-                            }
-                            ++bufptr;
-                            calls.get(context);
+                if (extractEscape(calls, context, &result) != 0) {
+                    goto ON_EXTRACT_ERROR;
+                }
+                break;
+            default: // Any other character
+            {
+                int octets = -1;
+                switch ((octets = utf8OctetLengthExpected(chr)))
+                {
+                    case 0:
+                    default:
+                        // this can't happend, because long encoded strings 
+                        // are already processed in cases 2-4
+                        assert(0);
+                        goto ON_EXTRACT_ERROR;
+                    case 1:
+                        if (dsAppend(&result, chr) != 0) {
+                            goto ON_EXTRACT_ERROR;
                         }
-                        dsAppend(&result, '?');
+                        calls.get(context);
+                        break;
+                    case 2:
+                    case 3:
+                    case 4:
+                    {
+                        uint32_t symbol = utf8ExtractOctets(octets, calls, context);
+                        if (symbol == 0) {
+                            // Decode failed, current implementation can't
+                            // get 0 from utf8ExtractOctets
+                            goto ON_EXTRACT_ERROR;
+                        }
+                        if (dsXAppend(&result, symbol) != 0) {
+                            goto ON_EXTRACT_ERROR;
+                        }
                         break;
                     }
                 }
-
-                break;
-            default: // Any other character
-                if (dsAppend(&result, chr) != 0) {
-                    return -1;
-                }
-                calls.get(context);
+            }
         }
     }
 
-    free(dsReleaseBuffer(&result));
-
     // reach end of string without closing quote mark (")
+
+ON_EXTRACT_ERROR:
+
+    free(dsReleaseBuffer(&result));
     return -1;
 }
 
