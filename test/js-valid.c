@@ -1,33 +1,11 @@
 #include <json2.h>
 #include <stdio.h>
 
-typedef struct fileContext {
-  FILE* file;
-  int peeked;
-} fileContext;
-
-int fileGetCharFunc(void* context){
-  fileContext* fc = (fileContext*)context;
-  int smb = fgetc(fc->file);
-  fc->peeked = smb;
-  return fc->peeked;
-}
-
-int filePeekCharFunc(void* context){
-  fileContext* fc = (fileContext*)context;
-  if (fc->peeked < 0) {
-    fc->peeked = fileGetCharFunc(context);
-  }
-  return fc->peeked;
-}
-
 size_t screenPrintFunc(void* context, const void* buffer, size_t bufsize) {
   return fwrite(buffer, sizeof(char), bufsize, (FILE*)context);
 }
 
 int main(int argc, char* argv[]) {
-  fileContext context;
-  j2ParseCallback calls;
   J2VAL j2root = 0;
   FILE* input = 0;
 
@@ -40,13 +18,7 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  context.peeked = -1;
-  context.file = input;
-
-  calls.get = fileGetCharFunc;
-  calls.peek = filePeekCharFunc;
-
-  j2root = j2ParseFunc(calls, &context);
+  j2root = j2ParseFile(input);
   if (j2root == 0){
     return -1;
   }

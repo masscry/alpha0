@@ -88,7 +88,7 @@ static int utf8OctetLengthExpected(char smb) {
 
 #define UTF8_MAX_OCTET_BUFFER (4)
 
-const uint32_t mask[UTF8_MAX_OCTET_BUFFER+1] = {
+static const uint32_t utf8Mask[UTF8_MAX_OCTET_BUFFER+1] = {
     0x3F, // tail has 6 bits to use   10XXXXXX
     0x7F, // 1-byte has 7 bits to use 0XXXXXXX
     0x1F, // 2-byte has 5 bits to use 110XXXXX
@@ -104,14 +104,14 @@ static uint32_t utf8ExtractOctets(int octets, j2ParseCallback calls, void* conte
     if (cursor <= 0) {
         return 0;
     }
-    result |= cursor & mask[octets];
+    result |= cursor & utf8Mask[octets];
 
     // read left octets
     --octets;
     while(octets-->0) {
         cursor = calls.get(context);
         result <<= 6;
-        result |= cursor & mask[0];
+        result |= cursor & utf8Mask[0];
     }
     return result;
 }
@@ -130,7 +130,7 @@ static int dsXAppend(dynstr_t* str, uint32_t smb) {
     size_t resultLeft;
     size_t size;
 
-    code = iconv_open("CP866", "WCHAR_T");
+    code = iconv_open(JSON_ENCODING_IN_PROGRAM, "WCHAR_T");
     if (code == ((iconv_t) -1)) {
         iconv_close(code);
         return -1;
