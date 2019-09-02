@@ -132,7 +132,6 @@ static int dsXAppend(dynstr_t* str, uint32_t smb) {
 
     code = iconv_open(JSON_ENCODING_IN_PROGRAM, "WCHAR_T");
     if (code == ((iconv_t) -1)) {
-        iconv_close(code);
         return -1;
     }
 
