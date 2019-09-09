@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  j2root = j2ParseFile(input);
+  j2root = j2ParseFileStream(input);
   if (j2root == 0){
     return -1;
   }

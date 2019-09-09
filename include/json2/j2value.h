@@ -199,12 +199,55 @@ J2API uint32_t j2ValueArraySize(const J2VAL val);
  */
 J2API int32_t j2ValueArrayAppend(J2VAL array, J2VAL item);
 
+/**
+ * Get number from object, or default value.
+ *
+ * @param jo valid json object 
+ * @param name object field name
+ * @param defval default value
+ * 
+ * @return number in object field, or default value
+ */
 J2API double joGetNumber(J2VAL obj, const char* item, double defval);
 
+/**
+ * Get string from object, or default value.
+ *
+ * @param jo valid json object 
+ * @param name object field name
+ * @param defval default value
+ * 
+ * @return string in object field, or default value
+ */
 J2API const char* joGetString(J2VAL obj, const char* item, const char* defval);
 
+/**
+ * Get number from array, or default value.
+ *
+ * @param ja valid json array
+ * @param index number index
+ * @param defval default value
+ */
 J2API double jaGetNumber(J2VAL arr, uint32_t index, double defval);
 
+/**
+ * Get string from array, or default value.
+ *
+ * @param ja valid json array
+ * @param index number index
+ * @param defval default value
+ */
 J2API const char* jaGetString(J2VAL arr, uint32_t index, const char* defval);
+
+/**
+ * Traverse tree by path.
+ *
+ * "" - return root
+ * ".name" - return name item from object
+ * "#id" - return id item from array
+ * ".name#id" - return id item from array with name
+ */
+J2API const J2VAL joFind(const J2VAL root, const char* path);
+
 
 #endif /* __J2_TREE_HEADER__ */

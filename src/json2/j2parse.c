@@ -15,6 +15,11 @@
 
 #include <json2.h>
 
+typedef struct loc_t {
+    int col;
+    int line;
+} loc_t;
+
 static int issplit(int symbol) {
     switch (symbol) {
         case 0:
@@ -30,7 +35,7 @@ static int issplit(int symbol) {
     }
 }
 
-static void skipSpaces(j2ParseCallback calls, void* context) {
+static void skipSpaces(j2ParseCallback calls, loc_t* ploc, void* context) {
     int cursor = -1;
     while (cursor != 0) {
         cursor = calls.peek(context);
@@ -38,10 +43,19 @@ static void skipSpaces(j2ParseCallback calls, void* context) {
             break;
         }
         calls.get(context);
+        if (cursor == '\n')
+        {
+            ploc->col = 1;
+            ++ploc->line;
+        }
+        else
+        {
+            ++ploc->col;
+        }
     }
 }
 
-static int expectString(j2ParseCallback calls, void* context, const char* str) {
+static int expectString(j2ParseCallback calls, struct loc_t* ploc, void* context, const char* str) {
     size_t len = strlen(str);
     size_t index = 0;
 
@@ -50,7 +64,7 @@ static int expectString(j2ParseCallback calls, void* context, const char* str) {
         if (cur != str[index]) {
             break;
         }
-        calls.get(context);
+        calls.get(context); ++ploc->col;
     }
 
     if (index != len) {
@@ -165,11 +179,11 @@ static int dsXAppend(dynstr_t* str, uint32_t smb) {
 
 #endif
 
-static int extractEscape(j2ParseCallback calls, void* context, dynstr_t* result) {
+static int extractEscape(j2ParseCallback calls, loc_t* ploc, void* context, dynstr_t* result) {
     char chr;
 
-    calls.get(context);        // skip '\\'
-    chr = calls.peek(context); // peek next
+    calls.get(context); ++ploc->col; // skip '\\'
+    chr = calls.peek(context);       // peek next
 
     switch (chr) {
         case -1:
@@ -179,62 +193,62 @@ static int extractEscape(j2ParseCallback calls, void* context, dynstr_t* result)
             if (dsAppend(result, '\"') != 0) {
                 return -1;
             }
-            calls.get(context);
+            calls.get(context); ++ploc->col;
             break;
         case '\\': // Reverse
             if (dsAppend(result, '\\') != 0) {
                 return -1;
             }
-            calls.get(context);
+            calls.get(context); ++ploc->col;
             break;
         case '/': // Solidus
             if (dsAppend(result, '/') != 0) {
                 return -1;
             }
-            calls.get(context);
+            calls.get(context); ++ploc->col;
             break;
         case 'b': // Backspace
             if (dsAppend(result, '\b') != 0) {
                 return -1;
             }
-            calls.get(context);
+            calls.get(context); ++ploc->col;
             break;
         case 'f': // Formfeed
             if (dsAppend(result, '\f') != 0) {
                 return -1;
             }
-            calls.get(context);
+            calls.get(context); ++ploc->col;
             break;
         case 'n': // Newline
             if (dsAppend(result, '\n') != 0) {
                 return -1;
             } 
-            calls.get(context);
+            calls.get(context); ++ploc->col;
             break;
         case 'r': // carriage return
             if (dsAppend(result, '\r') != 0) {
                 return -1;
             }
-            calls.get(context);
+            calls.get(context); ++ploc->col;
             break;
         case 't': // tab
             if (dsAppend(result, '\t') != 0) {
                 return -1;
             }
-            calls.get(context);
+            calls.get(context); ++ploc->col;
             break;
         case 'u':
         { // Unicode
             char buffer[5] = {0};
             char *bufptr = buffer;
-            calls.get(context);
+            calls.get(context); ++ploc->col;
             for (size_t i = 0; i < 4; ++i) {
                 *bufptr = calls.peek(context);
                 if ((!isxdigit(*((unsigned char *) bufptr))) || (*bufptr == 0)) {
                     return -1;
                 }
                 ++bufptr;
-                calls.get(context);
+                calls.get(context); ++ploc->col;
             }
             if (dsXAppend(result, strtoul(buffer, 0, 16)) != 0) {
                 return -1;
@@ -245,7 +259,7 @@ static int extractEscape(j2ParseCallback calls, void* context, dynstr_t* result)
     return 0;
 }
 
-static int extractString(j2ParseCallback calls, void* context, char** pstr) {
+static int extractString(j2ParseCallback calls, loc_t* ploc, void* context, char** pstr) {
     int chr = -1;
     dynstr_t result;
 
@@ -262,7 +276,7 @@ static int extractString(j2ParseCallback calls, void* context, char** pstr) {
     result.len = 0;
     result.cap = 0;
 
-    calls.get(context);
+    calls.get(context); ++ploc->col;
 
     while ((chr = calls.peek(context)) != 0) {
         switch (chr) {
@@ -274,10 +288,10 @@ static int extractString(j2ParseCallback calls, void* context, char** pstr) {
                     goto ON_EXTRACT_ERROR;
                 }
                 *pstr = dsReleaseBuffer(&result);
-                calls.get(context);
+                calls.get(context); ++ploc->col;
                 return 0;
             case '\\': // Escape character
-                if (extractEscape(calls, context, &result) != 0) {
+                if (extractEscape(calls, ploc, context, &result) != 0) {
                     goto ON_EXTRACT_ERROR;
                 }
                 break;
@@ -296,7 +310,7 @@ static int extractString(j2ParseCallback calls, void* context, char** pstr) {
                         if (dsAppend(&result, chr) != 0) {
                             goto ON_EXTRACT_ERROR;
                         }
-                        calls.get(context);
+                        calls.get(context); ++ploc->col;
                         break;
                     case 2:
                     case 3:
@@ -311,6 +325,7 @@ static int extractString(j2ParseCallback calls, void* context, char** pstr) {
                         if (dsXAppend(&result, symbol) != 0) {
                             goto ON_EXTRACT_ERROR;
                         }
+                        ++ploc->col;
                         break;
                     }
                 }
@@ -326,7 +341,7 @@ ON_EXTRACT_ERROR:
     return -1;
 }
 
-static int extractNumber(j2ParseCallback calls, void* context, double* presult) {
+static int extractNumber(j2ParseCallback calls, loc_t* ploc, void* context, double* presult) {
     int chr = -1;
     dynstr_t result;
     char* temp = 0;
@@ -342,6 +357,7 @@ static int extractNumber(j2ParseCallback calls, void* context, double* presult) 
 
     while (chr != 0) {
         chr = calls.peek(context);
+        ++ploc->col;
         switch (chr) {
             case '+':
             case '-': // Number
@@ -359,7 +375,7 @@ static int extractNumber(j2ParseCallback calls, void* context, double* presult) 
             case 'e':
             case 'E':
                 dsAppend(&result, chr);
-                calls.get(context);
+                calls.get(context); ++ploc->col;
                 break;
             default:
                 chr = 0;
@@ -375,20 +391,30 @@ static int extractNumber(j2ParseCallback calls, void* context, double* presult) 
     return 0;
 }
 
-static J2VAL j2ParseFuncSTD(j2ParseCallback calls, void* context) {
+#define J2_RETURN_ERROR(CONTEXT, CALLS, PLOC) \
+    if (CALLS.error != 0)\
+    {\
+        CALLS.error(CONTEXT, PLOC->line, PLOC->col);\
+    }\
+    return 0;
+
+static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
     int chr = -1;
 
     while (chr != 0) {
         chr = calls.peek(context);
+        ++ploc->col;
 
         switch (chr) {
+            case '\n':
+                ploc->col = 0;
+                ++ploc->line;
             case ' ': // Skip space characters
             case '\t':
-            case '\n':
             case '\v':
             case '\f':
             case '\r':
-                calls.get(context);
+                calls.get(context); ++ploc->col;
                 break;
             case '-': // Number
             case '0':
@@ -403,39 +429,39 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, void* context) {
             case '9':
             {
                 double val = 0.0;
-                if (extractNumber(calls, context, &val) == 0) {
+                if (extractNumber(calls, ploc, context, &val) == 0) {
                     return j2InitNumber(val);
                 }
-                return 0;
+                J2_RETURN_ERROR(context, calls, ploc);
             }
             case '\"':
             {
                 char* str = 0;
-                if (extractString(calls, context, &str) == 0) {
+                if (extractString(calls, ploc, context, &str) == 0) {
                     J2VAL result = j2InitString(str);
                     free(str);
                     return result;
                 }
-                return 0;
+                J2_RETURN_ERROR(context, calls, ploc);
             }
             case 't':
             {
-                if (expectString(calls, context, "true") == 0) {
-                    return 0;
+                if (expectString(calls, ploc, context, "true") == 0) {
+                    J2_RETURN_ERROR(context, calls, ploc);
                 }
                 return j2InitTrue();
             }
             case 'f':
             {
-                if (expectString(calls, context, "false") == 0) {
-                    return 0;
+                if (expectString(calls, ploc, context, "false") == 0) {
+                    J2_RETURN_ERROR(context, calls, ploc);
                 }
                 return j2InitFalse();
             }
             case 'n':
             {
-                if (expectString(calls, context, "null") == 0) {
-                    return 0;
+                if (expectString(calls, ploc, context, "null") == 0) {
+                    J2_RETURN_ERROR(context, calls, ploc);
                 }
                 return j2InitNull();
             }
@@ -444,7 +470,7 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, void* context) {
                 int expectComma = 0;
                 J2VAL result = j2InitArray();
                 if (result == 0) {
-                    return 0;
+                    J2_RETURN_ERROR(context, calls, ploc);
                 }
 
                 calls.get(context);
@@ -458,8 +484,8 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, void* context) {
                             return result;
                         case ',':
                             if (expectComma == 0) {
-                                j2Cleanup(&result);;
-                                return 0;
+                                j2Cleanup(&result);
+                                J2_RETURN_ERROR(context, calls, ploc);
                             }
                             calls.get(context);
                             expectComma = 0;
@@ -468,21 +494,21 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, void* context) {
                         {
                             if (expectComma != 0) {
                                 j2Cleanup(&result);;
-                                return 0;
+                                J2_RETURN_ERROR(context, calls, ploc);
                             }
-                            J2VAL item = j2ParseFuncSTD(calls, context);
+                            J2VAL item = j2ParseFuncSTD(calls, ploc, context);
                             if (item != 0) {
                                 if (j2ValueArrayAppend(result, item) < 0) {
-                                    j2Cleanup(&result);;
-                                    return 0;
+                                    j2Cleanup(&result);
+                                    J2_RETURN_ERROR(context, calls, ploc);
                                 }
                             }
-                            skipSpaces(calls, context);
+                            skipSpaces(calls, ploc, context);
                             expectComma = 1;
                         }
                     }
                 }
-                j2Cleanup(&result);;
+                j2Cleanup(&result);
                 break;
             }
             case '{':
@@ -490,7 +516,7 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, void* context) {
                 int expectComma = 0;
                 J2VAL result = j2InitObject();
                 if (result == 0) {
-                    return 0;
+                    J2_RETURN_ERROR(context, calls, ploc);
                 }
 
                 calls.get(context);
@@ -504,69 +530,77 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, void* context) {
                             return result;
                         case ',':
                             if (expectComma == 0) {
-                                j2Cleanup(&result);;
-                                return 0;
+                                j2Cleanup(&result);
+                                J2_RETURN_ERROR(context, calls, ploc);
                             }
                             calls.get(context);
                             expectComma = 0;
                             /* FALLTHROIGH */
                         default:
                         {
+                            J2VAL key = 0;
+                            J2VAL vl = 0;
+
                             if (expectComma != 0) {
-                                j2Cleanup(&result);;
-                                return 0;
+                                j2Cleanup(&result);
+                                J2_RETURN_ERROR(context, calls, ploc);
                             }
-                            J2VAL key = j2ParseFuncSTD(calls, context);
+                            
+                            key = j2ParseFuncSTD(calls, ploc, context);
                             if ((key == 0) || (j2Type(key) != J2_STRING)) {
                                 j2Cleanup(&key);
                                 j2Cleanup(&result);
-                                return 0;
+                                J2_RETURN_ERROR(context, calls, ploc);
                             }
-                            skipSpaces(calls, context);
+                            skipSpaces(calls, ploc, context);
                             if (calls.peek(context) != ':') {
                                 j2Cleanup(&key);
-                                j2Cleanup(&result);;
-                                return 0;
+                                j2Cleanup(&result);
+                                J2_RETURN_ERROR(context, calls, ploc);
                             }
                             calls.get(context);
 
-                            J2VAL vl = j2ParseFuncSTD(calls, context);
+                            vl = j2ParseFuncSTD(calls, ploc, context);
                             if (vl == 0) {
                                 j2Cleanup(&key);
                                 j2Cleanup(&result);;
-                                return 0;
+                                J2_RETURN_ERROR(context, calls, ploc);
                             }
 
                             if (j2ValueObjectItemSet(result, j2ValueString(key), vl) != 0) {
                                 j2Cleanup(&key);
                                 j2Cleanup(&vl);
                                 j2Cleanup(&result);;
-                                return 0;
+                                J2_RETURN_ERROR(context, calls, ploc);
                             }
 
                             j2Cleanup(&key);
-                            skipSpaces(calls, context);
+                            skipSpaces(calls, ploc, context);
                             expectComma = 1;
                         }
                     }
                 }
             }
             default:
-                return 0;
+                J2_RETURN_ERROR(context, calls, ploc);
         }
     }
-    return 0;
+    J2_RETURN_ERROR(context, calls, ploc);
 }
 
 J2VAL j2ParseFunc(j2ParseCallback calls, void* context) {
     J2VAL result = 0;
+    loc_t loc;
+
+    loc.line = 1;
+    loc.col = 1;
 
     char localeName[64];
     strncpy(localeName, setlocale(LC_NUMERIC, 0), 64);
     localeName[63] = 0;
 
-    result = j2ParseFuncSTD(calls, context);
-
+    setlocale(LC_NUMERIC, "C");
+    result = j2ParseFuncSTD(calls, &loc, context);
     setlocale(LC_NUMERIC, localeName);
     return result;
 }
@@ -598,7 +632,11 @@ int j2PeekCharStringContext(void* context) {
     return *cnt->cursor;
 }
 
-static j2ParseCallback stringParse = {j2GetCharStringContext, j2PeekCharStringContext};
+static j2ParseCallback stringParse = {
+    j2GetCharStringContext, 
+    j2PeekCharStringContext,
+    0
+};
 
 J2VAL j2ParseBuffer(const char* string, const char** endp) {
     j2StringContext context;
@@ -641,11 +679,11 @@ static int basicPeekCharFunc(void* pcon) {
   return -1;
 }
 
-static j2ParseCallback fileParse = {
-  basicGetCharFunc, /**< Return character, iterate to next */
-  basicPeekCharFunc /**< Return character, do not iterate to next */
-};
-
-J2VAL j2ParseFile(FILE* stream) {
+J2VAL j2ParseFileStreamEx(FILE* stream, j2OnErrorFunc onerror) {
+    j2ParseCallback fileParse = {
+        basicGetCharFunc,
+        basicPeekCharFunc,
+        onerror
+    };
     return j2ParseFunc(fileParse, stream);
 }

@@ -18,12 +18,15 @@ typedef int (*j2GetCharFunc)(void* context);
 
 typedef int (*j2PeekCharFunc)(void* context);
 
+typedef void (*j2OnErrorFunc)(void* context, int line, int col);
+
 /**
  * Parser callback functions
  */
 typedef struct j2ParseCallback {
     j2GetCharFunc get;   /**< Return character, iterate to next */
     j2PeekCharFunc peek; /**< Return character, do not iterate to next */
+    j2OnErrorFunc error;
 } j2ParseCallback;
 
 /**
@@ -52,6 +55,8 @@ J2API J2VAL j2ParseFunc(j2ParseCallback calls, void* context);
  * @param stream file stream
  * @return parsed tree, or zero on error
  */
-J2API J2VAL j2ParseFile(FILE* stream);
+J2API J2VAL j2ParseFileStreamEx(FILE* stream, j2OnErrorFunc onerror);
+
+#define j2ParseFileStream(INPUT) (j2ParseFileStreamEx(INPUT, 0))
 
 #endif /* __JSON_PARSER_HEADER__ */

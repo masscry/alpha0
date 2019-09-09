@@ -156,6 +156,93 @@ const char* jaGetString(J2VAL arr, uint32_t index, const char* defval) {
   return j2ValueString(jitem);
 }
 
+const J2VAL joFind(const J2VAL root, const char* cpath) {
+  char* cursor;
+  char* ncur;
+  char* buffer;
+  char oldcur;
+  J2VAL croot;
+  uint32_t len;
+  uint32_t index;
+
+  if (strcmp(cpath, "") == 0) {
+    return root;
+  }
+  
+  len = strlen(cpath) + 1;
+  buffer = (char*) malloc(len);
+  memcpy(buffer, cpath, len);
+  
+  croot = root;
+  cursor = buffer;
+
+  while(1) {
+    switch (*cursor) {
+      case 0:    // return current
+        goto CLEANUP;
+      case ' ':  // skip spaces
+      case '\t': // skip tabs 
+      case '\v':
+      case '\n':
+        ++cursor;
+        break;
+      case '.':  // search in object
+      case '/':  // search in object alias
+        ++cursor;
+        ncur = strpbrk(cursor, ".#/");
+        if (ncur != 0) {
+          oldcur = *ncur;
+          *ncur = 0;
+        }
+        if (j2Type(croot) != J2_OBJECT) {
+          croot = 0;
+          goto CLEANUP;
+        }
+        croot = j2ValueObjectItem(croot, cursor);
+        if (croot == 0) {
+          goto CLEANUP;
+        }
+
+        if (ncur == 0) {
+          goto CLEANUP;
+        }
+        *ncur = oldcur;
+        cursor = ncur;
+        break;
+      case '#': // search in array
+        ++cursor;
+        ncur = strpbrk(cursor, ".#/");
+        if (ncur != 0) {
+          oldcur = *ncur;
+          *ncur = 0;
+        }
+        if (j2Type(croot) != J2_ARRAY) {
+          croot = 0;
+          goto CLEANUP;
+        }
+
+        index = atoi(cursor);
+        croot = j2ValueArrayIndex(croot, index);
+        if (croot == 0) {
+          goto CLEANUP;
+        }
+
+        if (ncur == 0) {
+          goto CLEANUP;
+        }
+        *ncur = oldcur;
+        cursor = ncur;
+        break;
+      default:  // unknown pos
+        croot = 0;
+        goto CLEANUP;
+    }
+  }
+
+CLEANUP:
+  free(buffer);
+  return croot;
+}
 
 #include "j2value/j2special.c"
 #include "j2value/j2number.c"
