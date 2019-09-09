@@ -432,7 +432,7 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
                 if (extractNumber(calls, ploc, context, &val) == 0) {
                     return j2InitNumber(val);
                 }
-                J2_RETURN_ERROR(context, calls, ploc);
+                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
             }
             case '\"':
             {
@@ -442,26 +442,26 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
                     free(str);
                     return result;
                 }
-                J2_RETURN_ERROR(context, calls, ploc);
+                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
             }
             case 't':
             {
                 if (expectString(calls, ploc, context, "true") == 0) {
-                    J2_RETURN_ERROR(context, calls, ploc);
+                    J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                 }
                 return j2InitTrue();
             }
             case 'f':
             {
                 if (expectString(calls, ploc, context, "false") == 0) {
-                    J2_RETURN_ERROR(context, calls, ploc);
+                    J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                 }
                 return j2InitFalse();
             }
             case 'n':
             {
                 if (expectString(calls, ploc, context, "null") == 0) {
-                    J2_RETURN_ERROR(context, calls, ploc);
+                    J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                 }
                 return j2InitNull();
             }
@@ -470,7 +470,7 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
                 int expectComma = 0;
                 J2VAL result = j2InitArray();
                 if (result == 0) {
-                    J2_RETURN_ERROR(context, calls, ploc);
+                    J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                 }
 
                 calls.get(context);
@@ -485,7 +485,7 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
                         case ',':
                             if (expectComma == 0) {
                                 j2Cleanup(&result);
-                                J2_RETURN_ERROR(context, calls, ploc);
+                                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                             }
                             calls.get(context);
                             expectComma = 0;
@@ -494,13 +494,13 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
                         {
                             if (expectComma != 0) {
                                 j2Cleanup(&result);;
-                                J2_RETURN_ERROR(context, calls, ploc);
+                                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                             }
                             J2VAL item = j2ParseFuncSTD(calls, ploc, context);
                             if (item != 0) {
                                 if (j2ValueArrayAppend(result, item) < 0) {
                                     j2Cleanup(&result);
-                                    J2_RETURN_ERROR(context, calls, ploc);
+                                    J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                                 }
                             }
                             skipSpaces(calls, ploc, context);
@@ -516,7 +516,7 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
                 int expectComma = 0;
                 J2VAL result = j2InitObject();
                 if (result == 0) {
-                    J2_RETURN_ERROR(context, calls, ploc);
+                    J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                 }
 
                 calls.get(context);
@@ -531,7 +531,7 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
                         case ',':
                             if (expectComma == 0) {
                                 j2Cleanup(&result);
-                                J2_RETURN_ERROR(context, calls, ploc);
+                                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                             }
                             calls.get(context);
                             expectComma = 0;
@@ -543,20 +543,20 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
 
                             if (expectComma != 0) {
                                 j2Cleanup(&result);
-                                J2_RETURN_ERROR(context, calls, ploc);
+                                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                             }
                             
                             key = j2ParseFuncSTD(calls, ploc, context);
                             if ((key == 0) || (j2Type(key) != J2_STRING)) {
                                 j2Cleanup(&key);
                                 j2Cleanup(&result);
-                                J2_RETURN_ERROR(context, calls, ploc);
+                                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                             }
                             skipSpaces(calls, ploc, context);
                             if (calls.peek(context) != ':') {
                                 j2Cleanup(&key);
                                 j2Cleanup(&result);
-                                J2_RETURN_ERROR(context, calls, ploc);
+                                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                             }
                             calls.get(context);
 
@@ -564,14 +564,14 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
                             if (vl == 0) {
                                 j2Cleanup(&key);
                                 j2Cleanup(&result);;
-                                J2_RETURN_ERROR(context, calls, ploc);
+                                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                             }
 
                             if (j2ValueObjectItemSet(result, j2ValueString(key), vl) != 0) {
                                 j2Cleanup(&key);
                                 j2Cleanup(&vl);
                                 j2Cleanup(&result);;
-                                J2_RETURN_ERROR(context, calls, ploc);
+                                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
                             }
 
                             j2Cleanup(&key);
@@ -582,10 +582,10 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
                 }
             }
             default:
-                J2_RETURN_ERROR(context, calls, ploc);
+                J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
         }
     }
-    J2_RETURN_ERROR(context, calls, ploc);
+    J2_RETURN_ERROR(calls.onErrorData, calls, ploc);
 }
 
 J2VAL j2ParseFunc(j2ParseCallback calls, void* context) {
@@ -635,7 +635,7 @@ int j2PeekCharStringContext(void* context) {
 static j2ParseCallback stringParse = {
     j2GetCharStringContext, 
     j2PeekCharStringContext,
-    0
+    0, 0
 };
 
 J2VAL j2ParseBuffer(const char* string, const char** endp) {
@@ -679,11 +679,12 @@ static int basicPeekCharFunc(void* pcon) {
   return -1;
 }
 
-J2VAL j2ParseFileStreamEx(FILE* stream, j2OnErrorFunc onerror) {
+J2VAL j2ParseFileStreamEx(FILE* stream, j2OnErrorFunc onerror, void* errorData) {
     j2ParseCallback fileParse = {
         basicGetCharFunc,
         basicPeekCharFunc,
-        onerror
+        onerror,
+        errorData
     };
     return j2ParseFunc(fileParse, stream);
 }
