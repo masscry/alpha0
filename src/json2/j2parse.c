@@ -16,7 +16,6 @@
 #include <json2.h>
 
 typedef struct loc_t {
-    int col;
     int line;
 } loc_t;
 
@@ -45,12 +44,7 @@ static void skipSpaces(j2ParseCallback calls, loc_t* ploc, void* context) {
         calls.get(context);
         if (cursor == '\n')
         {
-            ploc->col = 1;
             ++ploc->line;
-        }
-        else
-        {
-            ++ploc->col;
         }
     }
 }
@@ -64,7 +58,7 @@ static int expectString(j2ParseCallback calls, struct loc_t* ploc, void* context
         if (cur != str[index]) {
             break;
         }
-        calls.get(context); ++ploc->col;
+        calls.get(context);
     }
 
     if (index != len) {
@@ -182,8 +176,8 @@ static int dsXAppend(dynstr_t* str, uint32_t smb) {
 static int extractEscape(j2ParseCallback calls, loc_t* ploc, void* context, dynstr_t* result) {
     char chr;
 
-    calls.get(context); ++ploc->col; // skip '\\'
-    chr = calls.peek(context);       // peek next
+    calls.get(context);        // skip '\\'
+    chr = calls.peek(context); // peek next
 
     switch (chr) {
         case -1:
@@ -193,62 +187,62 @@ static int extractEscape(j2ParseCallback calls, loc_t* ploc, void* context, dyns
             if (dsAppend(result, '\"') != 0) {
                 return -1;
             }
-            calls.get(context); ++ploc->col;
+            calls.get(context);
             break;
         case '\\': // Reverse
             if (dsAppend(result, '\\') != 0) {
                 return -1;
             }
-            calls.get(context); ++ploc->col;
+            calls.get(context);
             break;
         case '/': // Solidus
             if (dsAppend(result, '/') != 0) {
                 return -1;
             }
-            calls.get(context); ++ploc->col;
+            calls.get(context);
             break;
         case 'b': // Backspace
             if (dsAppend(result, '\b') != 0) {
                 return -1;
             }
-            calls.get(context); ++ploc->col;
+            calls.get(context);
             break;
         case 'f': // Formfeed
             if (dsAppend(result, '\f') != 0) {
                 return -1;
             }
-            calls.get(context); ++ploc->col;
+            calls.get(context);
             break;
         case 'n': // Newline
             if (dsAppend(result, '\n') != 0) {
                 return -1;
             } 
-            calls.get(context); ++ploc->col;
+            calls.get(context);
             break;
         case 'r': // carriage return
             if (dsAppend(result, '\r') != 0) {
                 return -1;
             }
-            calls.get(context); ++ploc->col;
+            calls.get(context);
             break;
         case 't': // tab
             if (dsAppend(result, '\t') != 0) {
                 return -1;
             }
-            calls.get(context); ++ploc->col;
+            calls.get(context);
             break;
         case 'u':
         { // Unicode
             char buffer[5] = {0};
             char *bufptr = buffer;
-            calls.get(context); ++ploc->col;
+            calls.get(context);
             for (size_t i = 0; i < 4; ++i) {
                 *bufptr = calls.peek(context);
                 if ((!isxdigit(*((unsigned char *) bufptr))) || (*bufptr == 0)) {
                     return -1;
                 }
                 ++bufptr;
-                calls.get(context); ++ploc->col;
+                calls.get(context);
             }
             if (dsXAppend(result, strtoul(buffer, 0, 16)) != 0) {
                 return -1;
@@ -276,7 +270,7 @@ static int extractString(j2ParseCallback calls, loc_t* ploc, void* context, char
     result.len = 0;
     result.cap = 0;
 
-    calls.get(context); ++ploc->col;
+    calls.get(context);
 
     while ((chr = calls.peek(context)) != 0) {
         switch (chr) {
@@ -288,7 +282,7 @@ static int extractString(j2ParseCallback calls, loc_t* ploc, void* context, char
                     goto ON_EXTRACT_ERROR;
                 }
                 *pstr = dsReleaseBuffer(&result);
-                calls.get(context); ++ploc->col;
+                calls.get(context);
                 return 0;
             case '\\': // Escape character
                 if (extractEscape(calls, ploc, context, &result) != 0) {
@@ -310,7 +304,7 @@ static int extractString(j2ParseCallback calls, loc_t* ploc, void* context, char
                         if (dsAppend(&result, chr) != 0) {
                             goto ON_EXTRACT_ERROR;
                         }
-                        calls.get(context); ++ploc->col;
+                        calls.get(context);
                         break;
                     case 2:
                     case 3:
@@ -325,7 +319,7 @@ static int extractString(j2ParseCallback calls, loc_t* ploc, void* context, char
                         if (dsXAppend(&result, symbol) != 0) {
                             goto ON_EXTRACT_ERROR;
                         }
-                        ++ploc->col;
+                       
                         break;
                     }
                 }
@@ -357,7 +351,7 @@ static int extractNumber(j2ParseCallback calls, loc_t* ploc, void* context, doub
 
     while (chr != 0) {
         chr = calls.peek(context);
-        ++ploc->col;
+       
         switch (chr) {
             case '+':
             case '-': // Number
@@ -375,7 +369,7 @@ static int extractNumber(j2ParseCallback calls, loc_t* ploc, void* context, doub
             case 'e':
             case 'E':
                 dsAppend(&result, chr);
-                calls.get(context); ++ploc->col;
+                calls.get(context);
                 break;
             default:
                 chr = 0;
@@ -394,7 +388,7 @@ static int extractNumber(j2ParseCallback calls, loc_t* ploc, void* context, doub
 #define J2_RETURN_ERROR(CONTEXT, CALLS, PLOC) \
     if (CALLS.error != 0)\
     {\
-        CALLS.error(CONTEXT, PLOC->line, PLOC->col);\
+        CALLS.error(CONTEXT, PLOC->line);\
     }\
     return 0;
 
@@ -403,18 +397,17 @@ static J2VAL j2ParseFuncSTD(j2ParseCallback calls, loc_t* ploc, void* context) {
 
     while (chr != 0) {
         chr = calls.peek(context);
-        ++ploc->col;
+       
 
         switch (chr) {
             case '\n':
-                ploc->col = 0;
                 ++ploc->line;
             case ' ': // Skip space characters
             case '\t':
             case '\v':
             case '\f':
             case '\r':
-                calls.get(context); ++ploc->col;
+                calls.get(context);
                 break;
             case '-': // Number
             case '0':
@@ -592,8 +585,7 @@ J2VAL j2ParseFunc(j2ParseCallback calls, void* context) {
     J2VAL result = 0;
     loc_t loc;
 
-    loc.line = 1;
-    loc.col = 1;
+    loc.line = 0;
 
     char localeName[64];
     strncpy(localeName, setlocale(LC_NUMERIC, 0), 64);

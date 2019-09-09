@@ -18,7 +18,7 @@ typedef int (*j2GetCharFunc)(void* context);
 
 typedef int (*j2PeekCharFunc)(void* context);
 
-typedef void (*j2OnErrorFunc)(void* context, int line, int col);
+typedef void (*j2OnErrorFunc)(void* context, int line);
 
 /**
  * Parser callback functions
