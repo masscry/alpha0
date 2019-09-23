@@ -23,7 +23,7 @@ if(ALPHA0_CHECK_COVERAGE)
     SET(CMAKE_EXE_LINKER_FLAGS "--coverage")
 endif(ALPHA0_CHECK_COVERAGE)
 
-add_library(alpha0 ${ALPHA0_SOURCES})
+add_library(alpha0 STATIC ${ALPHA0_SOURCES})
 
 target_include_directories(alpha0 PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
