@@ -27,8 +27,7 @@ add_library(alpha0 STATIC ${ALPHA0_SOURCES})
 
 if(ALPHA0_CHECK_COVERAGE)
     target_compile_options(alpha0 PUBLIC
-        -fprofile-arcs
-        -ftest-coverage
+        --coverage
     )
 endif(ALPHA0_CHECK_COVERAGE)
 
