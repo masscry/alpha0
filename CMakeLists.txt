@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 
 project (alpha0 LANGUAGES C)
 
@@ -14,16 +14,24 @@ set(ALPHA0_SOURCES
     ./src/json2/j2print.c
     ./src/json2/j2value.c
     ./contrib/mur32.c
+
+    ./src/prefixkv/pkvpair.c
+    ./src/prefixkv/prefixkv16.c
+    ./src/prefixkv/prfpriv.h
+    ./src/prefixkv/prefixkv.c
 )
 
 set(CMAKE_C_STANDARD 99)
 
+add_library(alpha0 STATIC ${ALPHA0_SOURCES})
+
 if(ALPHA0_CHECK_COVERAGE)
-    add_definitions("-fprofile-arcs -ftest-coverage")
-    SET(CMAKE_EXE_LINKER_FLAGS "--coverage")
+    target_compile_options(alpha0 PUBLIC
+        -fprofile-arcs
+        -ftest-coverage
+    )
 endif(ALPHA0_CHECK_COVERAGE)
 
-add_library(alpha0 STATIC ${ALPHA0_SOURCES})
 
 target_include_directories(alpha0 PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -43,9 +51,16 @@ export(TARGETS alpha0 FILE alpha0-config.cmake)
 
 add_executable(rbuf-udict-test test/rbuf-udict-test.c)
 
-target_link_libraries(rbuf-udict-test
+target_link_libraries(rbuf-udict-test PRIVATE
     alpha0
 )
+
+if(ALPHA0_CHECK_COVERAGE)
+    target_link_libraries(rbuf-udict-test PRIVATE
+        gcov
+    )
+endif(ALPHA0_CHECK_COVERAGE)
+
 
 add_test(NAME rbuf-udict-test COMMAND ./rbuf-udict-test)
 
@@ -63,6 +78,12 @@ target_link_libraries(json2-test
     alpha0
 )
 
+if(ALPHA0_CHECK_COVERAGE)
+    target_link_libraries(json2-test PRIVATE
+        gcov
+    )
+endif(ALPHA0_CHECK_COVERAGE)
+
 add_test(NAME json2-test COMMAND ./json2-test)
 
 add_executable(js-valid
@@ -72,6 +93,12 @@ add_executable(js-valid
 target_link_libraries(js-valid
     alpha0
 )
+
+if(ALPHA0_CHECK_COVERAGE)
+    target_link_libraries(js-valid PRIVATE
+        gcov
+    )
+endif(ALPHA0_CHECK_COVERAGE)
 
 add_test(NAME js-valid
     COMMAND ./js-valid ${CMAKE_CURRENT_SOURCE_DIR}/share/sample.jsn)
