@@ -74,7 +74,7 @@ target_include_directories(json2-test PRIVATE
     ./contrib
 )
 
-target_link_libraries(json2-test
+target_link_libraries(json2-test PRIVATE
     alpha0
 )
 
@@ -90,7 +90,7 @@ add_executable(js-valid
     test/js-valid.c
 )
 
-target_link_libraries(js-valid
+target_link_libraries(js-valid PRIVATE
     alpha0
 )
 
