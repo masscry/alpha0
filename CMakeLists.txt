@@ -57,7 +57,7 @@ target_link_libraries(rbuf-udict-test PRIVATE
 
 if(ALPHA0_CHECK_COVERAGE)
     target_link_libraries(rbuf-udict-test PRIVATE
-        gcov
+        --coverage
     )
 endif(ALPHA0_CHECK_COVERAGE)
 
@@ -80,7 +80,7 @@ target_link_libraries(json2-test PRIVATE
 
 if(ALPHA0_CHECK_COVERAGE)
     target_link_libraries(json2-test PRIVATE
-        gcov
+        --coverage
     )
 endif(ALPHA0_CHECK_COVERAGE)
 
@@ -96,7 +96,7 @@ target_link_libraries(js-valid PRIVATE
 
 if(ALPHA0_CHECK_COVERAGE)
     target_link_libraries(js-valid PRIVATE
-        gcov
+        --coverage
     )
 endif(ALPHA0_CHECK_COVERAGE)
 
